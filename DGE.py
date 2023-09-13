@@ -5,7 +5,7 @@ Author: Erin Young
 
 Description:
 
-This script takes nanopore and/or illumina reads and maps them to a fasta file with minimap2.
+This script takes nanopore and/or illumina reads and maps them to a fasta file or gfa file with minimap2.
 
 This generates a bam file which is then used determine the coverage of each fasta file.
 
@@ -31,9 +31,7 @@ import pandas as pd
 import pysam
 import mappy as mp
 import subprocess
-from pybedtools import BedTool
 from shutil import which
-
 
 #logging.basicConfig(format='%(asctime)s - %(message)s', datefmt='%y-%b-%d %H:%M:%S', level=logging.INFO)
 version = '0.0.20230912'
@@ -70,6 +68,9 @@ def check_tool(tool):
         logging.info('Found : ' + tool + ' at ' + str(path))
         found = 0
     return(found)
+
+def convert_to_fasta(gfa):
+    print(gfa)
 
 def get_coverage(df, bam, region):
     row = int(region.split('-')[0].split(':')[1]) 
@@ -167,6 +168,17 @@ if __name__ == "__main__":
         exit(1)
 
     ##### ----- ----- ----- ----- ----- ----- #####
+    ##### converting gfa to fasta             #####
+    ##### ----- ----- ----- ----- ----- ----- #####
+
+    if 'gfa' in reference:
+        logging.info('Conferting gfa file ' + reference + ' to fasta file')
+        reference, extra_reference = convert_to_fasta(gfa)
+        regions, contigs, starts = get_reference_length(extra_reference, window, out)
+    else:
+        regions, contigs, starts = get_reference_length(reference, window, out)
+
+    ##### ----- ----- ----- ----- ----- ----- #####
     ##### aligning reads to fasta             #####
     ##### ----- ----- ----- ----- ----- ----- #####
 
@@ -191,8 +203,6 @@ if __name__ == "__main__":
     ##### ----- ----- ----- ----- ----- ----- #####
     ##### getting coverage                    #####
     ##### ----- ----- ----- ----- ----- ----- #####
-
-    regions, contigs, starts = get_reference_length(reference, window, out)
 
     # bams = ['dge/tmp.sr.sorted.bam', 'dge/tmp.map-ont.sorted.bam'] # print
 
