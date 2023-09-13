@@ -21,6 +21,8 @@ dgc -r input.fasta -i illumina_R1.fastq illumina_R2.fastq -n nanopore.fastq -o o
 
 # I tried to keep dependencies down...
 import argparse
+import concurrent.futures
+import itertools
 import logging
 import matplotlib.pyplot as plt
 import numpy as np
@@ -50,10 +52,13 @@ args   = parser.parse_args()
 
 def align( reference, reads, threads, out, type):
     filename = out + '/tmp.' + type + '.sam'
+    sorted_filename = out + '/tmp.' + type + '.sorted.bam'
     with open(filename, "w") as sam:
         run = subprocess.run(['minimap2', '-ax', type, '-t', str(threads), reference] + reads, stdout = sam)
         logging.debug('The commandline is {}'.format(run.args))
-    pysam.sort('-o', out + '/tmp.' + type + '.sorted.sam', '-@', str(threads), filename)
+    pysam.sort('-o', sorted_filename, '-@', str(threads), filename)
+    pysam.index(sorted_filename)
+    return(sorted_filename)
 
 def check_tool(tool):
     path = which(tool)
@@ -66,38 +71,59 @@ def check_tool(tool):
         found = 0
     return(found)
 
+def get_coverage(df, bam, region):
+    row = int(region.split('-')[0].split(':')[1]) 
+    logging.debug('Getting coverage for ' + bam + ' and ' + region + ' on row ' + str(row))
+    cov=float(pysam.coverage('--no-header', bam, '-r', region).split()[6])
+    logging.debug('The coverage is ' + str(cov))
+    rowindex = df.index[df['region'] == row ]
+    df.loc[rowindex, [bam]] = cov
+
+def get_bam_coverage(df_bam, bam):
+    logging.debug('Getting coverage for entire ' + bam)
+    cov=float(pysam.coverage('--no-header', bam).split()[6])
+    
+    total    = float(pysam.view('-c', bam).strip())    
+    unmapped = float(pysam.view('-c', '-f', '4', bam).strip())
+    mapped   = float(pysam.view('-c', '-F', '4', bam).strip())
+
+    rowindex = df_bam.index[df_bam['bam'] == bam ]
+    df_bam.loc[rowindex, ['cov']]      = cov
+    df_bam.loc[rowindex, ['unmapped']] = unmapped
+    df_bam.loc[rowindex, ['mapped']]   = mapped
+    df_bam.loc[rowindex, ['total']]    = total
+
+def get_contig_coverage(df_contig, bam, region):
+    logging.debug('Getting coverage for ' + bam + ' and ' + region)
+    cov=float(pysam.coverage('--no-header', bam, '-r', region).split()[6])
+    logging.debug('The coverage is ' + str(cov))
+    rowindex = df_contig.index[df_contig['region'] == region ]
+    df_contig.loc[rowindex, [bam]] = cov
+
 def get_reference_length(fasta, window, out):
     pysam.faidx(fasta)
     df_fai = pd.read_table(fasta + '.fai', usecols=[0,1], header = None)
     df_fai.columns = ['NAME', 'LENGTH']
     logging.debug(df_fai)
 
-    df_ref = pd.DataFrame(columns = ['#name', 'start', 'end'])
+    ranges  = []
+    contigs = []
+    starts  = []
+
     for ind in df_fai.index:
         contig        = df_fai.at[df_fai.index[ind], 'NAME']
+        contigs.append(contig)
         contig_length = df_fai.at[df_fai.index[ind], 'LENGTH']
         logging.debug('Contig ' + str(contig) + ' has the length of ' + str(contig_length))
         start = 0
         while start < contig_length:
             end = start + window - 1
-            df_ref.loc[len(df_ref)] = {'#name': contig, 'start': start, 'end': end}
+            new_range = contig + ':' + str(start) + '-' + str(end)
+            ranges.append( new_range )
+            starts.append( start )
             start = start + window
 
-    bed = BedTool.from_dataframe(df_ref)
-    df_ref.to_csv(out + '/tmp.bed', index=False, sep='\t')
-    return bed
-
-def get_window_coverage(bam, out, bed):
-    #bed = out + '/tmp.bed'
-    #pysam.depth('-b', bed, '-o', bam + '.cov', bam)
-    #bed.BedTool.multi_bam_coverage(bam)
-    bedtools_bed = BedTool('dge/tmp.bed')
-    print(bedtools_bed)
-    bedtools_bed.multi_bam_coverage(bams='dge/tmp.map-ont.sorted.sam')
-    #bedtools_bam = Bedtool('dge/tmp.map-ont.sorted.sam')
-    
-    #multi_bam_coverage(bams=bedtools_bam, bed=bedtools_bed)
-    #print(cov)
+    return ranges, contigs, starts
 
 if __name__ == "__main__":
     # check that input files were specified (does not check if they exist)
@@ -109,26 +135,21 @@ if __name__ == "__main__":
     if not os.path.exists(args.out):
         os.mkdir(args.out)
 
-    logging.info('DGC version :\t\t'          + str(version))
-    logging.info('Number of threads :\t'      + str(args.threads))
-    logging.info('Final directory :\t\t'      + str(args.out))
+    logging.info('DGC version :\t\t'     + str(version))
+    logging.info('Final directory :\t\t' + str(args.out))
+    logging.info('Number of threads :\t' + str(args.threads))
+    logging.info('Window size : \t\t'    + str(args.window))
+    logging.info('Input fasta file : \t' + str(args.reference))
     if args.illumina: logging.info('Input illumina file(s) :\t' + ', '.join(args.illumina))
     if args.nanopore: logging.info('Input nanopore file :\t'    + str(args.nanopore))
-    logging.info('Input fasta file : \t'      + str(args.reference))
 
     reference = args.reference
     illumina  = list(args.illumina)
-    nanopore  = [ args.nanopore]
+    nanopore  = [args.nanopore]
     window    = args.window
     threads   = args.threads
     out       = args.out
     
-    logging.debug(illumina)
-    logging.debug(nanopore)
-    
-    illuminasam = ''
-    nanoporesam = ''
-
     ##### ----- ----- ----- ----- ----- ----- #####
     ##### checking shell tools                #####
     ##### ----- ----- ----- ----- ----- ----- #####
@@ -149,29 +170,76 @@ if __name__ == "__main__":
     ##### aligning reads to fasta             #####
     ##### ----- ----- ----- ----- ----- ----- #####
 
-#    if illumina:
-#        logging.info('Starting alignment for Illumina reads')
-#        align( reference, illumina, threads, out, 'sr')
-#        illuminasam = out + '/tmp.sr.sam'
+    bams = []
+    columns = ['region']
 
-#    if nanopore:
-#        logging.info('Starting alignment for ONT reads')
-#        align( reference, nanopore, threads, out, 'map-ont')
-#        nanoporesam = out + '/tmp.map-ont.sam'
+    if illumina:
+        logging.info('Starting alignment for Illumina reads')
+        bam = align( reference, illumina, threads, out, 'sr')
+        bams.append(bam)
+        columns.append('illumina')
+
+    if nanopore:
+        logging.info('Starting alignment for ONT reads')
+        bam = align( reference, nanopore, threads, out, 'map-ont')
+        bams.append(bam)
+        columns.append('nanopore')
+
+    logging.debug('The bams :')
+    logging.debug(bams)
 
     ##### ----- ----- ----- ----- ----- ----- #####
     ##### getting coverage                    #####
     ##### ----- ----- ----- ----- ----- ----- #####
 
-    bed = get_reference_length(reference, window, out)
-    #out + '/tmp.bed'
+    regions, contigs, starts = get_reference_length(reference, window, out)
 
-    # step 3 : get coverage for each window
-    get_window_coverage(out + '/tmp.map-ont.sorted.sam', out, bed)
+    # bams = ['dge/tmp.sr.sorted.bam', 'dge/tmp.map-ont.sorted.bam'] # print
 
+    logging.info('Getting average coverage for each window')
+    df_windows           = pd.DataFrame([])
+    df_windows['region'] = starts
+    pool = concurrent.futures.ThreadPoolExecutor( max_workers = threads )
+    for input in list(itertools.product( bams, regions )):
+        pool.submit(get_coverage, df_windows, input[0], input[1])
+        # get_coverage(df_windows, input[0], input[1])
 
-    # step 4 : get average coverage for each contig
-    # step 5 : get average coverage for all contigs
+    logging.info('Getting average coverage for each contig')
+    df_contigs = pd.DataFrame([])
+    df_contigs['region'] = contigs
+    for input in list(itertools.product( bams, contigs )):
+        # get_contig_coverage(df_contigs, input[0], input[1])
+        pool.submit(get_contig_coverage, df_contigs, input[0], input[1]) 
+
+    logging.info('Getting average coverage')
+    df_bams = pd.DataFrame([])
+    df_bams['bam'] = bams
+    for bam in bams:
+        # get_bam_coverage(df_bams, bam)
+        pool.submit(get_bam_coverage, df_bams, bam)
+
+    pool.shutdown(wait=True)
+
+    columns = ['region', 'illumina', 'nanopore']
+    df_windows.columns = columns
+    df_contigs.columns = columns
+    df_bams['type'] = df_bams['bam'].str.replace(out + '/', '', regex = False).replace('tmp.sr.sorted.bam', 'illumina', regex = False).replace('tmp.map-ont.sorted.bam', 'nanopore', regex = False)
+    logging.debug(df_windows)
+    logging.debug(df_contigs)
+    logging.debug(df_bams)
+
+    # writing results to a file
+    df_windows.to_csv(out + '/windows_depth.csv', index=False)
+    df_contigs.to_csv(out + '/contigs_depth.csv', index=False)
+    df_bams.to_csv(   out + '/average_depth.csv', index=False)
+
+    ##### ----- ----- ----- ----- ----- ----- #####
+    ##### removing tmp files                  #####
+    ##### ----- ----- ----- ----- ----- ----- #####
+
+    tmp_files = [ 'tmp.map-ont.sam', 'tmp.map-ont.sorted.bam', 'tmp.map-ont.sorted.bam.bai', 'tmp.sr.sam', 'tmp.sr.sorted.bam', 'tmp.sr.sorted.bam.bai' ]
+    for file in tmp_files:
+        os.remove(out + '/' + file)
 
     ##### ----- ----- ----- ----- ----- ----- #####
     ##### creating figures                    #####
@@ -182,11 +250,15 @@ if __name__ == "__main__":
     # set line for average for contig
     # set line for average for all
 
-    ##### ----- ----- ----- ----- ----- ----- #####
-    ##### removing tmp files                  #####
-    ##### ----- ----- ----- ----- ----- ----- #####
+    # getting rid of column with all the bam names
+    #df.drop('bam', axis=1, inplace=True)
 
-    # os.remove(bam0)
+    #boxplot = df.boxplot(fontsize=5, rot=90, figsize=(15,8), grid=False)
+    #boxplot.plot()
+    #plt.title('Primer Assessment')
+    #boxplot.set_ylabel('meandepth')
+    #boxplot.set_xlabel('amplicon name')
+    #boxplot.figure.savefig(args.out + '/amplicon_depth.png', bbox_inches='tight')
+    #plt.close()
 
-
-    logging.info('DGC is complete! Final files are in args.out')
+    logging.info('DGC is complete! Final files are in ' + out)
