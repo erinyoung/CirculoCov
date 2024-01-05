@@ -86,7 +86,7 @@ def main():
     logging.debug(genome_dict)
     
     map_illumina(illumina, fasta)
-    map_nanopore(nanopore, fasta)
+    #map_nanopore(nanopore, fasta)
 
     #circular(genome_dict, genome, tmp)
 
