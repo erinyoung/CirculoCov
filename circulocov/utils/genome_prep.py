@@ -6,7 +6,7 @@ import logging
 import os
 from Bio import SeqIO
 
-def genome_prep(fasta, out):
+def genome_prep(fasta, out, padding):
     """ Turn fasta file into dict """
 
     prepped_fasta = out + os.path.basename(fasta)
@@ -25,10 +25,10 @@ def genome_prep(fasta, out):
         if any(x in record.description.lower() for x in ["circular=true", "circ=true", "circular=t", "circ=t"]):
             genome_dict[record.id]["circ"] = True
             circ_count += 1
-            if len(record.seq) < 10000:
+            if len(record.seq) < padding:
                 record.seq = record.seq + record.seq
             else:
-                record.seq = record.seq + record.seq[:10001]
+                record.seq = record.seq + record.seq[:padding + 1]
         else:
             genome_dict[record.id]["circ"] = False
 

@@ -1,14 +1,42 @@
 #!/usr/bin/env python
 
-""" Add sequences to the end for circular contigs """
+""" Mapping/Alignment of reads to assembly """
 
 import logging
-import os
+import subprocess
 import pysam
-import shutil
-from Bio import SeqIO
+import os
 
-def minimap(genome_dict, genome, out):
+def mapping(reads, assembly, preset, threads, out, tmp):
     """ Minimap2 FTW """
 
-    subprocess.run(minimap2, '-d', , target_file  + threads )
+    # naming sam file
+    sam = tmp + preset + ".sam"
+    bam = out + preset + ".bam"
+
+    # convert reads to list
+    reads = [reads] if isinstance(reads, str) else reads
+
+    logging.info(f"Starting alignment for {reads}")
+    command     = ["minimap2", "-ax", preset, "-t", str(threads), assembly] + reads + [">", sam]
+    command_str = " ".join(command)
+    process     = subprocess.Popen(command_str, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    return_code = process.wait()
+
+    # Check if the command executed successfully
+    if return_code == 0:
+        logging.debug("Command executed successfully.")
+    else:
+        logging.debug(f"Error: Command returned non-zero exit code {return_code}.")
+    
+    if os.path.exists(sam):
+        logging.debug(f"Sorting and indexing {sam}")
+        # note: originally I kept the sam files and pysam threw some indexing errors
+        pysam.sort('-o', bam, '-@', str(threads), sam)
+        pysam.index(bam)
+
+        logging.info(f"Bam file {bam} created")
+        return bam
+    
+    else:
+        return False
