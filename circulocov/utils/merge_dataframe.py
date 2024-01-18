@@ -1,12 +1,9 @@
 #!/usr/bin/env python
+# pylint: disable=logging-fstring-interpolation
 
 """ Making mergine pretty """
 
 import logging
-import os
-import pysam
-import shutil
-from Bio import SeqIO
 import pandas as pd
 
 def merge_depth_dataframe(df, analysis_df, analysis):
@@ -29,12 +26,11 @@ def merge_cov_dataframe(df, analysis_df, analysis):
     analysis_df = analysis_df.add_prefix(analysis + "_")
 
     df['match'] = df['#rname'] + "-" + df['startpos'].astype(str) + "-" + df['endpos'].astype(str)
-    df = pd.merge(df, analysis_df, left_on="match", right_on= analysis + "_match", how="outer")
-    print(df)
+    df = pd.merge(df, analysis_df, left_on="match", right_on = analysis + "_match", how="outer")
 
     for header in ["#rname", "startpos", "endpos", "match"]:
         df.loc[df[header].isnull(),  header ] = df[analysis + '_' + header ]
         df = df.drop(analysis + '_' + header, axis=1)
-    
-    logging.info(f"Mean depths from {analysis} have been merged in")
+
+    logging.info(f"Coverages from {analysis} have been merged in")
     return df
