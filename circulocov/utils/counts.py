@@ -2,7 +2,7 @@
 
 """ Gets coverage for sam """
 
-import concurrent
+import concurrent.futures
 import pandas as pd
 
 from .coverage import coverage
@@ -49,10 +49,10 @@ def counts(bam, genome_dict, analysis, args):
                 pfuture = executor.submit(depth, bam, preg)
                 ptasks.append(pfuture)
 
-            completed_tasks, not_completed_tasks = concurrent.futures.wait(tasks,return_when=concurrent.futures.ALL_COMPLETED)
+            completed_tasks, _ = concurrent.futures.wait(tasks,return_when=concurrent.futures.ALL_COMPLETED)
             results = [task.result() for task in completed_tasks]
 
-            pcompleted_tasks, pnot_completed_tasks = concurrent.futures.wait(ptasks,return_when=concurrent.futures.ALL_COMPLETED)
+            pcompleted_tasks, _ = concurrent.futures.wait(ptasks,return_when=concurrent.futures.ALL_COMPLETED)
             padded_results = [ptask.result() for ptask in pcompleted_tasks]
 
         df_depth = create_depth_dataframe(results, padded_results, genome_dict)
