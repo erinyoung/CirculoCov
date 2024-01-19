@@ -32,8 +32,6 @@ def average_depth(df):
         depth_dict["pacbio_meandepth"] = weighted_meandepth(df, "pacbio", "meandepth")
         depth_dict["pacbio_coverage"]  = weighted_meandepth(df, "pacbio", "coverage")
 
-    depth_dict["total_length"] = df['endpos'].sum()
-
     logging.debug("depth dict:")
     logging.debug(depth_dict)
 
