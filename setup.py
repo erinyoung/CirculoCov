@@ -26,7 +26,7 @@ setup(
         "coverage",
         "visualization",
     ],
-    python_requires=">=3.8, <4",
+    python_requires=">=3.9, <4",
     install_requires=[
         "pandas",
         "pysam",
