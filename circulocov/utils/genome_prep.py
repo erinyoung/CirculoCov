@@ -18,9 +18,11 @@ def genome_prep(args, out):
     # for appending together
     records = []
     circ_count = 0
+    total_length = 0
     for record in SeqIO.parse(args.genome,"fasta"):
         genome_dict[record.id] = {}
         genome_dict[record.id]["length"] = len(record.seq)
+        total_length = total_length + len(record.seq)
 
         # checking if circular
         circular_trues = ["circular=true", "circ=true", "circular=t", "circ=t"]
@@ -45,4 +47,4 @@ def genome_prep(args, out):
     logging.debug("The dictionary for the genome is")
     logging.debug(genome_dict)
 
-    return genome_dict, prepped_fasta
+    return genome_dict, prepped_fasta, total_length
