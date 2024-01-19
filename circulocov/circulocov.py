@@ -129,7 +129,7 @@ def main():
         ##### Part 1. Setup                 #####
         ##### ----- ----- ----- ----- ----- #####
 
-        genome_dict, fasta = genome_prep(args, temp_dir)
+        genome_dict, fasta, total_length = genome_prep(args, temp_dir)
 
         ##### ----- ----- ----- ----- ----- #####
         ##### Part 2. Minimap2              #####
@@ -186,6 +186,7 @@ def main():
         ##### ----- ----- ----- ----- ----- #####
 
         results_dict = {}
+        results_dict['total_length'] = total_length
 
         # TODO : uncomment these!
 
@@ -206,12 +207,13 @@ def main():
         ##### ----- ----- ----- ----- ----- #####
         # https://moshi4.github.io/pyCirclize/circos_plot/
 
+        # TODO : visualize coverage of 10 longest contigs
+
         ##### ----- ----- ----- ----- ----- #####
         ##### Part 6. Create Summary        #####
         ##### ----- ----- ----- ----- ----- #####
 
         summary(df_cov, genome_dict, results_dict, args)
-
 
 if __name__ == "__main__":
     main()
