@@ -31,7 +31,7 @@ def overall_row(df_cov, results_dict, args):
     df['sample'] = args.sample
 
     df.loc[orig_len,'#rname'] = "all"
-    df.loc[orig_len,"endpos"] = results_dict["meandepth"]["total_length"]
+    df.loc[orig_len,"endpos"] = results_dict['total_length']
 
     for analysis in ["nanopore", "illumina", "pacbio"]:
         if analysis + "_numreads" in df.columns:
