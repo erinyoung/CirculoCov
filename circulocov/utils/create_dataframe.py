@@ -18,7 +18,7 @@ def create_depth_dataframe(depths, pdepths, genome_dict):
         df.loc[len(df.index)] = [contig, pos, end, depth]
 
     df["position"] = pd.to_numeric(df["position"], downcast="integer")
-    df["depth"] = pd.to_numeric(df["depth"])
+    df["depth"]    = pd.to_numeric(df["depth"])
     df["match"]    = df["contig"] + ":" + df["position"].astype("string")
     df = df.sort_values(by=['contig', 'position'], ascending= [True, True], ignore_index=True)
 
