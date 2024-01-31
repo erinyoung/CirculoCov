@@ -32,6 +32,8 @@ setup(
         "pysam",
         "matplotlib",
         "numpy",
+        "pycirclize",
+        "biopython"
     ],
     entry_points={
         'console_scripts': [
