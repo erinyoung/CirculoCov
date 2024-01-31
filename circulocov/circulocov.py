@@ -30,6 +30,7 @@ from circulocov.utils.mapping           import mapping
 from circulocov.utils.counts            import counts
 from circulocov.utils.merge_dataframe   import merge_cov_dataframe, merge_depth_dataframe
 from circulocov.utils.summary           import summary
+from circulocov.utils.visualize         import visualize
 
 def main():
     """ Get coverage for draft genomes """
@@ -160,8 +161,8 @@ def main():
         nanopore_bam = "CirculoCov/circulocov.map-ont.bam"
         illumina_bam = "CirculoCov/circulocov.sr.bam"
 
-        df_depth    = pd.DataFrame(columns = ["contig", "position", "end", "match"])
-        df_cov      = pd.DataFrame(columns = ["#rname", "startpos", "endpos"])
+        df_depth = pd.DataFrame(columns = ["contig", "position", "end", "match"])
+        df_cov   = pd.DataFrame(columns = ["#rname", "startpos", "endpos"])
 
         if os.path.exists(nanopore_bam):
             analysis_df_depth, analysis_df_cov = counts(nanopore_bam, genome_dict, "nanopore", args)
@@ -208,6 +209,7 @@ def main():
         # https://moshi4.github.io/pyCirclize/circos_plot/
 
         # TODO : visualize coverage of 10 longest contigs
+        visualize(df_depth, args)
 
         ##### ----- ----- ----- ----- ----- #####
         ##### Part 6. Create Summary        #####
