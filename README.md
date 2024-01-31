@@ -1,23 +1,33 @@
-# WARNING : THIS TOOL IS UNDER DEVELOPMENT AND IS NOT ACTUALLY FUNCTIONAL
+# CirculoCov: Circular-Aware Coverage for Draft Genomes
 
-# Draft Genome Coverage
+## Overview
+CirculoCov is a Python tool designed for circular-aware coverage analysis of draft genomes. This tool is designed to take a draft genome, map reads to it, and then visualize the coverage across the genome. This tool can also include the coverage of Illumina reads (paired-end or single-end).
 
-Draft Genome Covarege (DCG) is a tool to estimate and visualize the genome coverage of nanopore and/or illumina reads on a draft assembly.
+## Requirements
+- Python 3.9
+- pandas
+- matplotlib
 
-Dependencies:
-- pygenome-viz
-- pip3
-
-(Expected) usage:
-
+## Installation
 ```
-dgc -n nanopore_reads.fastq -i illumina_R1.fastq illumina_R2.fastq -r draft_genome.fasta -o output_prefix
+pip install circulocov
 ```
 
-Input fastq and fasta files can be '.gz' compressed.
+## Usage
+```
+circulocov -g fasta -n nanopore.fastq -i illumina1.fastq illumina2.fastq -o out
+```
 
-This will create a subset of files with the prefix set in the command line.
+Options
+-n, --nanopore: Path to the Nanopore fastq file (required).
+-i, --illumina: Path to the Illumina fastq files (optional).
+-o, --out: directory for results
+-w, --window: window size for coverage
 
-Output files
-- dgc_coverage.png is a visualization of the coverage for each contig (not recommended for draft genomes with >10 contigs)
-- dgc_coverage.csv is a csv file with a row for each contig and a column for contig name, percent coverage for nanopore reads, average depth for nanopore reads, percent coverage for illumina reads, average coverage for illumina reads
+## Output
+The output is
+- A csv file with each contig broken into windows with their corresponding depths for Illumina and nanopore files
+- png files showing depth
+
+## Examples
+
