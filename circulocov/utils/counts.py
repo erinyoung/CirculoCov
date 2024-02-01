@@ -1,4 +1,6 @@
 #!/usr/bin/env python
+# pylint: disable=R0912
+# pylint: disable=R0915
 
 """ Gets coverage for sam """
 
@@ -24,16 +26,19 @@ def counts(bam, genome_dict, analysis, args):
                 "meanbaseq",
                 "meanmapq"]
 
-    df_cov.to_csv(  args.out + '/' + analysis + '_cov.txt'  , columns=cov_cols, index=False, sep = "\t")
+    df_cov.to_csv(args.out + '/' + analysis + '_cov.txt',
+                  columns=cov_cols,
+                  index=False,
+                  sep = "\t")
 
     if args.all:
         # dividing up the genome into windows for coverage
         regs  = regions(genome_dict, args)
         pregs = padded_regions(genome_dict, args)
 
-        # TODO : remove these once finished
-        regs=['5:2501-3000', '5:3001-3500', '5:3501-4000', '5:4001-4500']
-        pregs=['5:11019-11518', '5:11519-12018', '5:12019-12518']
+        # from testing
+        # regs=['1:2501-3000', '1:3001-3500', '1:3501-4000', '1:4001-4500', '5:2501-3000', '5:3001-3500', '5:3501-4000', '5:4001-4500'] # pylint: disable=C0301
+        # pregs=['1:11019-11518', '1:11519-12018', '1:12019-12518', '5:11019-11518', '5:11519-12018', '5:12019-12518'] # pylint: disable=C0301
 
         results = []
         padded_results = []
@@ -59,14 +64,9 @@ def counts(bam, genome_dict, analysis, args):
 
         # creating csv of results
         dep_cols = ["contig", "position", "end", "mean_depth"]
-        
+
         df_depth.to_csv(args.out + '/' + analysis + '_depth.txt', columns=dep_cols, index=False, sep = "\t")
     else:
         df_depth = pd.DataFrame()
 
     return df_depth, df_cov
-    
-    
-    
-
-

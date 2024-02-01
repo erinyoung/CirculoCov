@@ -31,9 +31,7 @@ def padded_regions(genome_dict, args):
             padded_length = genome_dict[contig]['length'] + args.padding
 
         for i in range(genome_dict[contig]['length'] + 1, padded_length, args.window):
-            end = i + args.window - 1
-            if end > padded_length:
-                end = padded_length
+            end = min(i + args.window - 1, padded_length)
 
             regs.append(contig + ":" + str(i) + "-" + str(end))
 

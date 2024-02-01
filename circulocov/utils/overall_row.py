@@ -37,7 +37,7 @@ def overall_row(df_cov, results_dict, args):
         if analysis + "_numreads" in df.columns:
             df[analysis + "_numreads"] = pd.to_numeric(df[analysis + "_numreads"])
             summation = df[analysis + "_numreads"].sum()
-            df.loc[orig_len, analysis + "_numreads"] = summation + results_dict["unmapped_" + analysis]
+            df.loc[orig_len, analysis + "_numreads"] = summation + results_dict["unmapped_" + analysis] # pylint disable=C0301
             df[analysis + "_numreads"] = df[analysis + "_numreads"].astype(int)
 
         for header in ["covbases"]:
@@ -49,7 +49,7 @@ def overall_row(df_cov, results_dict, args):
 
         for header in ["meandepth", "coverage"]:
             if analysis + "_" + header in results_dict["meandepth"].keys():
-                df.loc[orig_len, analysis + "_" + header ] = results_dict["meandepth"][analysis + "_" + header]
+                df.loc[orig_len, analysis + "_" + header ] = results_dict["meandepth"][analysis + "_" + header] # pylint disable=C0301
                 df[analysis + "_" + header ] = df[analysis + "_" + header ].round(2)
 
     return df

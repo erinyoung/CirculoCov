@@ -14,9 +14,9 @@ def depth(bam, reg):
 
     df = pd.DataFrame(columns = ["ref", "pos", "depth"])
     for dep in depths:
-        depth = dep.split("\t")
-        if len(depth) == 3:
-            df.loc[len(df.index)] = depth
+        dept = dep.split("\t")
+        if len(dept) == 3:
+            df.loc[len(df.index)] = dept
 
     logging.debug(f"The depth dataframe for {bam}")
     logging.debug(df)

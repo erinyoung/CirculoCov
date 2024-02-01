@@ -6,7 +6,7 @@
 import logging
 import os
 from Bio import SeqIO
-from Bio.SeqUtils import GC
+#from Bio.SeqUtils import GC
 
 def genome_prep(args, out):
     """ Turn fasta file into dict """
@@ -23,7 +23,8 @@ def genome_prep(args, out):
     for record in SeqIO.parse(args.genome,"fasta"):
         genome_dict[record.id] = {}
         genome_dict[record.id]["length"] = len(record.seq)
-        genome_dict[record.id]["GC"] = GC(record.seq)
+        genome_dict[record.id]["name"] = str(record.id)
+        #genome_dict[record.id]["GC"] = GC(record.seq)
         total_length = total_length + len(record.seq)
 
         # checking if circular

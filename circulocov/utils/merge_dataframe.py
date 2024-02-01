@@ -22,7 +22,7 @@ def merge_depth_dataframe(df, analysis_df, analysis):
 def merge_cov_dataframe(df, analysis_df, analysis):
     """ Adds prefixes and removes unneeded columns after merging """
 
-    analysis_df['match'] = analysis_df['#rname'] + "-" + analysis_df['startpos'].astype(str) + "-" + analysis_df['endpos'].astype(str)
+    analysis_df['match'] = analysis_df['#rname'] + "-" + analysis_df['startpos'].astype(str) + "-" + analysis_df['endpos'].astype(str) # pylint: disable=C0301
     analysis_df = analysis_df.add_prefix(analysis + "_")
 
     df['match'] = df['#rname'] + "-" + df['startpos'].astype(str) + "-" + df['endpos'].astype(str)
