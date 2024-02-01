@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 # pylint: disable=logging-fstring-interpolation
+# pylint: disable=R0912
+# pylint: disable=R0915
 
 '''
 Author: Erin Young
@@ -31,6 +33,7 @@ from circulocov.utils.counts            import counts
 from circulocov.utils.merge_dataframe   import merge_cov_dataframe, merge_depth_dataframe
 from circulocov.utils.summary           import summary
 from circulocov.utils.visualize         import visualize
+from circulocov.utils.extract           import extract
 
 def main():
     """ Get coverage for draft genomes """
@@ -136,30 +139,28 @@ def main():
         ##### Part 2. Minimap2              #####
         ##### ----- ----- ----- ----- ----- #####
 
-        # TODO : uncomment these
-        #if args.nanopore:
-        #    nanopore_bam = mapping(args.nanopore, fasta, "map-ont", args, temp_dir)
-        # else:
-        # nanopore_bam = ""
+        if args.nanopore:
+            nanopore_bam = mapping(args.nanopore, fasta, "map-ont", args, temp_dir)
+        else:
+            nanopore_bam = ""
 
-        # if args.illumina:
-        #     illumina_bam = mapping(args.illumina, fasta, "sr", args, temp_dir)
-        #    else:
-        # illumina_bam = ""
+        if args.illumina:
+            illumina_bam = mapping(args.illumina, fasta, "sr", args, temp_dir)
+        else:
+            illumina_bam = ""
 
         if args.pacbio:
             pacbio_bam   = mapping(args.pacbio, fasta, "map-pb", args, temp_dir)
         else:
-            pacbio_bam  = ""
+            pacbio_bam   = ""
 
         ##### ----- ----- ----- ----- ----- #####
         ##### Part 3. Samtools Counts       #####
         ##### ----- ----- ----- ----- ----- #####
 
-        # TODO : remove these lines (only exists for testing)
-
-        nanopore_bam = "CirculoCov/circulocov.map-ont.bam"
-        illumina_bam = "CirculoCov/circulocov.sr.bam"
+        # used for testing
+        # nanopore_bam = "CirculoCov/circulocov.map-ont.bam"
+        # illumina_bam = "CirculoCov/circulocov.sr.bam"
 
         df_depth = pd.DataFrame(columns = ["contig", "position", "end", "match"])
         df_cov   = pd.DataFrame(columns = ["#rname", "startpos", "endpos"])
@@ -189,27 +190,35 @@ def main():
         results_dict = {}
         results_dict['total_length'] = total_length
 
-        # TODO : uncomment these!
+        if os.path.exists(nanopore_bam):
+            results_dict["unmapped_nanopore"] = extract(nanopore_bam, genome_dict,
+                                                        "nanopore",
+                                                        args,
+                                                        temp_dir)
 
-        # if os.path.exists(nanopore_bam):
-        #     results_dict["unmapped_nanopore"] = extract(nanopore_bam, genome_dict, "nanopore", args, temp_dir)
+        if os.path.exists(illumina_bam):
+            results_dict["unmapped_illumina"] = extract(illumina_bam, genome_dict,
+                                                        "illumina",
+                                                        args,
+                                                        temp_dir)
 
-        # if os.path.exists(illumina_bam):
-        #     results_dict["unmapped_illumina"] = extract(illumina_bam, genome_dict, "illumina", args, temp_dir)
+        if os.path.exists(pacbio_bam):
+            results_dict["unmapped_pacbio"]   = extract(pacbio_bam,
+                                                        genome_dict,
+                                                        "pacbio",
+                                                        args,
+                                                        temp_dir)
 
-        # if os.path.exists(pacbio_bam):
-        #     results_dict[]"unmapped_pacbio"] = extract(pacbio_bam, genome_dict, "pacbio", args, temp_dir)
-
-        results_dict["unmapped_nanopore"] = 4
-        results_dict["unmapped_illumina"] = 6675
+        # used for testing
+        #results_dict["unmapped_nanopore"] = 4
+        #results_dict["unmapped_illumina"] = 6675
 
         ##### ----- ----- ----- ----- ----- #####
         ##### Part 5. Graph Coverage        #####
         ##### ----- ----- ----- ----- ----- #####
-        # https://moshi4.github.io/pyCirclize/circos_plot/
 
-        # TODO : visualize coverage of 10 longest contigs
-        visualize(df_depth, args)
+        if args.all:
+            visualize(genome_dict, df_depth, args)
 
         ##### ----- ----- ----- ----- ----- #####
         ##### Part 6. Create Summary        #####
