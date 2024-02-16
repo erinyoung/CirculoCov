@@ -1,15 +1,15 @@
 #!/usr/bin/env python
 
-""" Creating summary file """
+''' Creating summary file '''
 
 from .average_depth import average_depth
 from .overall_row import overall_row
 
 def summary(df_cov, genome_dict, results_dict, args):
-    """ Creating summary file """
+    ''' Creating summary file '''
     # count if single end or paired end
 
-    results_dict["meandepth"] = average_depth(df_cov)
+    results_dict['meandepth'] = average_depth(df_cov)
 
     df = overall_row(df_cov, results_dict, args)
 
@@ -28,4 +28,4 @@ def summary(df_cov, genome_dict, results_dict, args):
     df = df.sort_values(by=['endpos', '#rname'], ascending= [False, True], ignore_index=True)
     df = df.rename(columns={'#rname': 'contigs', 'endpos': 'length'})
 
-    df.to_csv(args.out + '/overall_summary.txt', index=False, sep = "\t")
+    df.to_csv(args.out + '/overall_summary.txt', index=False, sep = '\t')

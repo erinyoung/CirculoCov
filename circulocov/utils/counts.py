@@ -2,71 +2,67 @@
 # pylint: disable=R0912
 # pylint: disable=R0915
 
-""" Gets coverage for sam """
+''' Gets coverage for sam '''
 
 import concurrent.futures
+import os
 import pandas as pd
+import logging
 
 from .coverage import coverage
 from .depth import depth
-from .regions import regions, padded_regions
 from .create_dataframe import create_depth_dataframe
 
-def counts(bam, genome_dict, analysis, args):
-    """ Gets relevant counts """
+def counts(bam, genome_dict, analysis, args, tmp):
+    ''' Gets relevant counts '''
+
+    logging.info(f'Getting coverage for {analysis}')
 
     df_cov   = coverage(bam)
-    cov_cols = ["#rname",
-                "startpos",
-                "endpos",
-                "numreads",
-                "covbases",
-                "coverage",
-                "meandepth",
-                "meanbaseq",
-                "meanmapq"]
+    cov_cols = ['#rname',
+                'startpos',
+                'endpos',
+                'numreads',
+                'covbases',
+                'coverage',
+                'meandepth',
+                'meanbaseq',
+                'meanmapq']
 
     df_cov.to_csv(args.out + '/' + analysis + '_cov.txt',
                   columns=cov_cols,
                   index=False,
-                  sep = "\t")
+                  sep = '\t')
 
     if args.all:
-        # dividing up the genome into windows for coverage
-        regs  = regions(genome_dict, args)
-        pregs = padded_regions(genome_dict, args)
+        logging.info(f'Getting depth for {analysis}')
 
-        # from testing
-        # regs=['1:2501-3000', '1:3001-3500', '1:3501-4000', '1:4001-4500', '5:2501-3000', '5:3001-3500', '5:3501-4000', '5:4001-4500'] # pylint: disable=C0301
-        # pregs=['1:11019-11518', '1:11519-12018', '1:12019-12518', '5:11019-11518', '5:11519-12018', '5:12019-12518'] # pylint: disable=C0301
-
+        # run by contig to speed up processing
         results = []
-        padded_results = []
-        # to speed up processing
         with concurrent.futures.ThreadPoolExecutor(max_workers = args.threads) as executor:
-            tasks  = []
-            ptasks = []
-            for reg in regs:
-                future = executor.submit(depth, bam, reg)
+            tasks = []
+            for contig in genome_dict.keys():
+                future = executor.submit(depth, bam, contig, tmp)
                 tasks.append(future)
-
-            for preg in pregs:
-                pfuture = executor.submit(depth, bam, preg)
-                ptasks.append(pfuture)
 
             completed_tasks, _ = concurrent.futures.wait(tasks,return_when=concurrent.futures.ALL_COMPLETED)
             results = [task.result() for task in completed_tasks]
 
-            pcompleted_tasks, _ = concurrent.futures.wait(ptasks,return_when=concurrent.futures.ALL_COMPLETED)
-            padded_results = [ptask.result() for ptask in pcompleted_tasks]
+        df_depth = pd.DataFrame(columns = ['contig', 'pos', 'depth'])
+        for dep_contig in results:
+            if os.stat(dep_contig).st_size > 0:
+                df_dep_contig = pd.read_table(dep_contig, names=['contig','pos', 'depth'])
+                df_depth = pd.concat([df_depth, df_dep_contig], ignore_index=True)
 
-        df_depth = create_depth_dataframe(results, padded_results, genome_dict)
+        df_depth = df_depth.sort_values(['contig', 'pos']).reset_index(drop=True)
 
-        # creating csv of results
-        dep_cols = ["contig", "position", "end", "mean_depth"]
+        df_depth.to_csv(args.out + '/' + analysis + '_full_depth.txt', index=False, sep = '\t')
 
-        df_depth.to_csv(args.out + '/' + analysis + '_depth.txt', columns=dep_cols, index=False, sep = "\t")
+        df_window_depth = create_depth_dataframe(df_depth, genome_dict, args)
+
+        df_window_depth.to_csv(args.out + '/' + analysis + '_window_depth.txt', index=False, sep = '\t')
+
     else:
         df_depth = pd.DataFrame()
 
-    return df_depth, df_cov
+    return df_window_depth, df_cov

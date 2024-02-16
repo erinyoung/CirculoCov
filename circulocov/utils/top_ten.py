@@ -1,10 +1,10 @@
 #!/usr/bin/env python
 
-""" Get 10 longest contigs """
+''' Get 10 longest contigs '''
 
 def top_ten (genome_dict):
 
-    """ Get 10 longest contigs """
+    ''' Get 10 longest contigs '''
 
     lengths = []
     for key in genome_dict.keys():
