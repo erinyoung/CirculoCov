@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-""" visualize top 10 contigs """
+''' visualize top 10 contigs '''
 
 import concurrent.futures
 import logging
@@ -11,7 +11,7 @@ from .create_figure import create_linear_figure
 
 def visualize (genome_dict, df, args):
 
-    """ visualize top 10 contigs """
+    ''' visualize top 10 contigs '''
 
     len_threshold = top_ten(genome_dict)
 
