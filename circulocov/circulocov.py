@@ -204,7 +204,7 @@ def main():
             if args.all:
                 df_depth = merge_depth_dataframe(df_depth, analysis_df_depth, 'pacbio')
         
-        df_depth = df_depth.fillna(0, method = 'ffill')
+        df_depth = df_depth.infer_objects(copy=False).fillna(0)
         df_depth = df_depth.sort_values(by=['contig', 'pos']).reset_index(drop=True)
         df_depth.to_csv(args.out + '/depth.txt', index=False, sep = '\t')
         
@@ -214,8 +214,6 @@ def main():
         ##### ----- ----- ----- ----- ----- #####
         ##### Part 4. Extract fastq         #####
         ##### ----- ----- ----- ----- ----- #####
-
-        # TODO : put fastq in subdirectory
                 
         logging.info('Extracting fastq files')
 
