@@ -28,7 +28,7 @@ def genome_prep(args, out):
         total_length = total_length + len(record.seq)
 
         # checking if circular
-        circular_trues = ['circular=true', 'circ=true', 'circular=t', 'circ=t']
+        circular_trues = ['circular=true', 'circ=true', 'circular=t', 'circ=t', 'complete sequence']
         if any(x in record.description.lower() for x in circular_trues):
             genome_dict[record.id]['circ'] = True
             circ_count += 1

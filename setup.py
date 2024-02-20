@@ -26,13 +26,13 @@ setup(
         "coverage",
         "visualization",
     ],
-    python_requires=">=3.9, <4",
+    python_requires=">=3.11, <4",
     install_requires=[
         "pandas",
         "pysam",
         "matplotlib",
         "numpy",
-        "pycirclize",
+        "pyCirclize",
         "biopython"
     ],
     entry_points={
