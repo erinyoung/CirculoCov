@@ -18,15 +18,19 @@ def create_depth_dataframe(df, genome_dict, args):
         divisor = round(genome_dict[contig]['length'] / args.window)
 
         # getting the 'divisor' points on the graph plus the near beginning and near end       
-        df_filtered = df[(df['contig'] == contig) & (df['pos'] <= genome_dict[contig]['length']) & ((df['pos'] % divisor == 0) | ( df['pos'] == 1 ) | ( df['pos'] == genome_dict[contig]['length'] -1 ) )].copy()
+        df_filtered = df[(df['contig'] == contig) & (df['pos'] <= genome_dict[contig]['length']) & ((df['pos'] % divisor == 0) | ( df['pos'] == 1 ) | ( df['pos'] == genome_dict[contig]['length'] - 1 ) )].copy()
+        if 1 not in df_filtered['pos'].values:
+            df_filtered.loc[len(df_filtered.index)] = [contig, 1, 0]  
+        if genome_dict[contig]['length'] - 1 not in df_filtered['pos'].values:
+            df_filtered.loc[len(df_filtered.index)] = [contig, genome_dict[contig]['length'] - 1, 0]
 
         # adding the padded coverage
         df_filtered_padded = df[(df['contig'] == contig) & (df['pos'] > int(genome_dict[contig]['length']))].copy()
         if not df_filtered_padded.empty :
-            df_filtered_padded['pos'] = df_filtered_padded['pos'] - int(genome_dict[contig]['length'])
-            df_filtered_padded = df_filtered_padded[(df_filtered_padded['pos'] % divisor == 0 ) | (df_filtered_padded['pos'] == 1 ) | (df_filtered_padded['pos'] == genome_dict[contig]['length'] -1 ) ].copy()
-            df_filtered_padded = df_filtered_padded.drop('contig', axis=1)
-            df_filtered_padded = df_filtered_padded.rename(columns={'depth': 'padded_depth'})
+            df_filtered_padded['new_pos'] = df_filtered_padded['pos'] - int(genome_dict[contig]['length'])
+            df_filtered_padded = df_filtered_padded[(df_filtered_padded['new_pos'] % divisor == 0 ) | (df_filtered_padded['new_pos'] == 1 ) | (df_filtered_padded['new_pos'] == genome_dict[contig]['length'] - 1 ) ].copy()
+            df_filtered_padded = df_filtered_padded.drop(['pos', 'contig'], axis=1)
+            df_filtered_padded = df_filtered_padded.rename(columns={'depth': 'padded_depth', 'new_pos': 'pos'})
 
             df_filtered = pd.merge(df_filtered, df_filtered_padded, left_on='pos', right_on='pos', how='left')
             df_filtered = df_filtered.fillna(0)
