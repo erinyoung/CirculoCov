@@ -138,7 +138,7 @@ def main():
     if not os.path.exists(args.out):
         os.mkdir(args.out)
 
-    if not os.path.exists(args.out + '/fastq'):
+    if not os.path.exists(args.out + '/fastq') and args.all :
         os.mkdir(args.out + '/fastq')
 
     with tempfile.TemporaryDirectory(dir = args.out) as temp_dir:
@@ -249,7 +249,7 @@ def main():
         df_depth = pd.read_table(args.out + '/depth.txt')
 
         if args.all:
-            logging.info('Graphing converage')
+            logging.info('Graphing coverage')
 
             visualize(genome_dict, df_depth, args)
 
