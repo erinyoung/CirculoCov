@@ -19,7 +19,7 @@ def create_circos_figure(contig_dict, df, args):
         for sector in circos.sectors:
             track1 = sector.add_track((50, 54))
             track1.axis(fc='black')
-            major_interval = 100000
+            major_interval = 250000
             minor_interval = int(major_interval / 10)
             if sector.size > minor_interval:
                 track1.xticks_by_interval(major_interval, label_formatter=lambda v: f'{v / 1000:.0f} Kb') # pylint: disable=C0301
