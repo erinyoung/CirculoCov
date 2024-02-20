@@ -63,6 +63,6 @@ def counts(bam, genome_dict, analysis, args, tmp):
         df_window_depth.to_csv(args.out + '/' + analysis + '_window_depth.txt', index=False, sep = '\t')
 
     else:
-        df_depth = pd.DataFrame()
+        df_window_depth = pd.DataFrame()
 
     return df_window_depth, df_cov
