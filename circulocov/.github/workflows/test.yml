@@ -20,6 +20,7 @@ jobs:
 
             MINIMAP2_VER="2.26"
             curl -L https://github.com/lh3/minimap2/releases/download/v${MINIMAP2_VER}/minimap2-${MINIMAP2_VER}_x64-linux.tar.bz2 | tar -jxvf -
+            export PATH=$(pwd)/minimap${MINIMAP2_VER}_x64-linux:$PATH
         
       - name: Run CirculoCov
         run: pytest
