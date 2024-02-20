@@ -19,6 +19,7 @@ def visualize (genome_dict, df, args):
         tasks = []
         for contig in genome_dict.keys():
             if genome_dict[contig]['length'] >= len_threshold:
+                logging.info(f"Creating depth figure for {genome_dict[contig]['name']}")
                 if genome_dict[contig]['circ'] :
                     future = executor.submit(create_circos_figure, genome_dict[contig], df, args)
                     tasks.append(future)
