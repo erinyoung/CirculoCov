@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setup(
     name='circulocov',
-    version='0.1.20230104',
+    version='0.1.20240104',
     author='Erin Young',
     author_email='eriny@utah.gov',
     url="https://github.com/erinyoung/CirculoCov",
@@ -18,7 +18,7 @@ setup(
         'Development Status :: 4 - Beta ',
         'Intended Audience :: Science/Research',
         'Intended Audience :: Developers',
-        'License :: OSI Approved :: GPL-3.0',
+        'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
         'Topic :: Scientific/Engineering :: Bio-Informatics '
         ],
     keywords = [
@@ -26,13 +26,13 @@ setup(
         "coverage",
         "visualization",
     ],
-    python_requires=">=3.9, <4",
+    python_requires=">=3.11, <4",
     install_requires=[
         "pandas",
         "pysam",
-        "matplotlib",
+        "matplotlib>=3.0.0",
         "numpy",
-        "pycirclize",
+        "pyCirclize",
         "biopython"
     ],
     entry_points={

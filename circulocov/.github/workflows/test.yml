@@ -1,0 +1,38 @@
+name: Test CirculoCov
+
+on: [pull_request, workflow_dispatch]
+
+run-name: Test CirculoCov
+
+jobs:
+
+  test:
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Install dependencies
+        run: |
+            pip install .
+
+            pip install pytest
+
+            MINIMAP2_VER="2.26"
+            curl -L https://github.com/lh3/minimap2/releases/download/v${MINIMAP2_VER}/minimap2-${MINIMAP2_VER}_x64-linux.tar.bz2 | tar -jxvf -
+            export PATH=$(pwd)/minimap${MINIMAP2_VER}_x64-linux:$PATH
+        
+      - name: Run CirculoCov
+        run: pytest
+
+      - name: Run CirculoCov version
+        run: circulocov -v
+      
+      - name: Run CirculoCov help
+        run: circulocov -h
+
+      - name : Final tree
+        run: tree .
+
+      - name : Check final files
+        run: ls */overal_summary.txt

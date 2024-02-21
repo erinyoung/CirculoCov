@@ -1,54 +1,46 @@
 #!/usr/bin/env python
 
-""" Get dataframe of coverage """
+''' Get dataframe of coverage '''
 
-import logging
 import pandas as pd
 
-def create_depth_dataframe(depths, pdepths, genome_dict):
-    """ Creating dataframe of coverages """
+def create_depth_dataframe(df, genome_dict, args):
+    ''' Creating dataframe of coverages '''
 
-    logging.info("Creating dataframe of coverages")
-    df = pd.DataFrame(columns = ["contig", "position", "end", "depth"])
+    df['contig'] = df['contig'].astype(str)
+    df['pos']    = pd.to_numeric(df['pos'],   downcast='integer')
+    df['depth']  = pd.to_numeric(df['depth'], downcast='integer')
 
-    for reg, depth in depths:
-        contig = reg.split(":")[0]
-        pos    = reg.split(":")[1].split("-")[0]
-        end    = reg.split(":")[1].split("-")[1]
-        df.loc[len(df.index)] = [contig, pos, end, depth]
+    df_window_depth = pd.DataFrame(columns = ['contig', 'pos', 'depth'])
 
-    df["position"] = pd.to_numeric(df["position"], downcast="integer")
-    df["depth"]    = pd.to_numeric(df["depth"])
-    df["match"]    = df["contig"] + ":" + df["position"].astype("string")
-    df = df.sort_values(by=['contig', 'position'], ascending= [True, True], ignore_index=True)
-
-    # now for the tricky part
-    pdf = pd.DataFrame(columns = ["contig", "position", "pdepth"])
-
-    for reg, depth in pdepths:
-        contig = reg.split(":")[0]
-        pos    = reg.split(":")[1].split("-")[0]
-        pdf.loc[len(pdf.index)] = [contig, pos, depth]
-        pdf["position"] = pd.to_numeric(pdf["position"], downcast="integer")
-        pdf = pdf.sort_values(by=['contig', 'position'], ascending= [True, True], ignore_index=True)
-
-    pdf["length"] = 0
     for contig in genome_dict.keys():
-        pdf.loc[pdf["contig"] == contig, "length"] = genome_dict[contig]["length"]
 
-    pdf["pdepth"] = pd.to_numeric(pdf["pdepth"])
-    pdf["original"] = pdf["position"] - pdf["length"]
-    pdf["match"]    = pdf["contig"] + ":" + pdf["original"].astype("string")
-    pdf = pdf[["match", "pdepth"]]
+        divisor = round(genome_dict[contig]['length'] / args.window)
 
-    df = pd.merge(df, pdf, left_on="match", right_on="match", how="left")
-    df["pdepth"]     = df[["pdepth"]].fillna(0)
-    df["mean_depth"] = df["depth"] + df["pdepth"]
+        # getting the 'divisor' points on the graph plus the near beginning and near end       
+        df_filtered = df[(df['contig'] == contig) & (df['pos'] <= genome_dict[contig]['length']) & ((df['pos'] % divisor == 0) | ( df['pos'] == 1 ) | ( df['pos'] == genome_dict[contig]['length'] - 1 ) )].copy()
+        if 1 not in df_filtered['pos'].values:
+            df_filtered.loc[len(df_filtered.index)] = [contig, 1, 0]  
+        if genome_dict[contig]['length'] - 1 not in df_filtered['pos'].values:
+            df_filtered.loc[len(df_filtered.index)] = [contig, genome_dict[contig]['length'] - 1, 0]
 
-    logging.debug("Coverage dataframe")
-    logging.debug(pdf)
-    logging.debug(df)
+        # adding the padded coverage
+        df_filtered_padded = df[(df['contig'] == contig) & (df['pos'] > int(genome_dict[contig]['length']))].copy()
+        if not df_filtered_padded.empty :
+            df_filtered_padded['new_pos'] = df_filtered_padded['pos'] - int(genome_dict[contig]['length'])
+            df_filtered_padded = df_filtered_padded[(df_filtered_padded['new_pos'] % divisor == 0 ) | (df_filtered_padded['new_pos'] == 1 ) | (df_filtered_padded['new_pos'] == genome_dict[contig]['length'] - 1 ) ].copy()
+            df_filtered_padded = df_filtered_padded.drop(['pos', 'contig'], axis=1)
+            df_filtered_padded = df_filtered_padded.rename(columns={'depth': 'padded_depth', 'new_pos': 'pos'})
 
-    df = df[["contig", "position", "end", "match", "mean_depth"]]
+            df_filtered = pd.merge(df_filtered, df_filtered_padded, left_on='pos', right_on='pos', how='left')
+            df_filtered = df_filtered.fillna(0)
+            df_filtered['new_depth'] = df_filtered['padded_depth'] + df_filtered['depth']
+            df_filtered = df_filtered.drop(['padded_depth', 'depth'], axis=1)
+            df_filtered = df_filtered.rename(columns={'new_depth': 'depth'})
+            df_filtered['depth']  = pd.to_numeric(df_filtered['depth'], downcast='integer')
 
-    return df
+        df_window_depth = pd.concat([df_window_depth, df_filtered], ignore_index=True)
+
+    df_window_depth = df_window_depth.sort_values(['contig', 'pos']).reset_index(drop=True)
+
+    return df_window_depth
